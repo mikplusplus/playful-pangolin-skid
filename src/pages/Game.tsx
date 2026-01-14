@@ -3,11 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, PhoneOff, Trophy, Coins } from 'lucide-react';
+import { Phone, PhoneOff, Trophy, Coins, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Game = () => {
-  const [gameState, setGameState] = useState<'idle' | 'connecting' | 'ivr' | 'playing' | 'result' | 'winner'>('idle');
+  const [gameState, setGameState] = useState<'idle' | 'connecting' | 'ivr' | 'playing' | 'result'>('idle');
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ isWinner: boolean; amount?: number } | null>(null);
   const { toast } = useToast();
@@ -92,126 +93,307 @@ const Game = () => {
           <CardDescription>Simulazione del sistema di gioco telefonico</CardDescription>
         </CardHeader>
         <CardContent>
-          {gameState === 'idle' && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <p className="mb-4">
-                  Benvenuto nel sistema MOB.LOTTO 4.0. Premi il pulsante per simulare una chiamata.
-                </p>
-                <div className="bg-muted p-4 rounded-lg mb-4">
-                  <h3 className="font-semibold mb-2">Flusso di gioco:</h3>
-                  <ol className="text-sm space-y-1 list-decimal list-inside">
-                    <li>Connessione al sistema</li>
-                    <li>Messaggio IVR di conferma</li>
-                    <li>Estrazione casuale</li>
-                    <li>Annuncio risultato</li>
-                  </ol>
+          <AnimatePresence mode="wait">
+            {gameState === 'idle' && (
+              <motion.div
+                key="idle"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="text-center">
+                  <div className="flex justify-center mb-6">
+                    <div className="relative">
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
+                        <Coins className="text-white h-16 w-16" />
+                      </div>
+                      <div className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">€1</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="mb-4">
+                    Benvenuto nel sistema MOB.LOTTO 4.0. Premi il pulsante per simulare una chiamata.
+                  </p>
+                  <div className="bg-muted p-4 rounded-lg mb-4">
+                    <h3 className="font-semibold mb-2">Flusso di gioco:</h3>
+                    <ol className="text-sm space-y-1 list-decimal list-inside">
+                      <li>Connessione al sistema</li>
+                      <li>Messaggio IVR di conferma</li>
+                      <li>Estrazione casuale</li>
+                      <li>Annuncio risultato</li>
+                    </ol>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex gap-3">
-                <Button className="flex-1" onClick={startGame}>
-                  Inizia a giocare
-                </Button>
-                <Button variant="outline" onClick={handleExit}>
-                  Esci
-                </Button>
-              </div>
-            </div>
-          )}
-          
-          {gameState === 'connecting' && (
-            <div className="text-center space-y-4">
-              <div className="animate-pulse">
-                <Phone className="mx-auto h-12 w-12 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold">Connessione in corso...</h3>
-              <p>Stiamo connettendo la tua chiamata al sistema MOB.LOTTO</p>
-            </div>
-          )}
-          
-          {gameState === 'ivr' && (
-            <div className="text-center space-y-4">
-              <div className="animate-pulse">
-                <Phone className="mx-auto h-12 w-12 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold">Messaggio IVR</h3>
-              <div className="bg-muted p-4 rounded-lg text-left">
-                <p className="mb-2">
-                  <strong>Benvenuto a MOB.LOTTO 4.0</strong>
-                </p>
-                <p className="mb-2">
-                  Il costo di questa chiamata è di 1 euro.
-                </p>
-                <p>
-                  Per confermare di avere almeno 18 anni e partecipare, premi 3.
-                </p>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Simulazione del messaggio IVR...
-              </p>
-            </div>
-          )}
-          
-          {gameState === 'playing' && (
-            <div className="text-center space-y-6">
-              <h3 className="text-lg font-semibold">Estrazione in corso</h3>
-              <div className="relative">
-                <Progress value={progress} className="w-full h-4" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-medium text-primary-foreground">
-                    {progress}%
-                  </span>
+                
+                <div className="flex gap-3">
+                  <Button className="flex-1" onClick={startGame}>
+                    Inizia a giocare
+                  </Button>
+                  <Button variant="outline" onClick={handleExit}>
+                    Esci
+                  </Button>
                 </div>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Determinazione del risultato...
-              </p>
-            </div>
-          )}
-          
-          {gameState === 'result' && result && (
-            <div className="text-center space-y-6">
-              {result.isWinner ? (
-                <>
-                  <div className="mx-auto bg-green-100 rounded-full p-3 w-16 h-16 flex items-center justify-center">
-                    <Trophy className="text-green-600 h-8 w-8" />
+              </motion.div>
+            )}
+            
+            {gameState === 'connecting' && (
+              <motion.div
+                key="connecting"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center space-y-6"
+              >
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 10, -10, 0]
+                  }}
+                  transition={{ 
+                    duration: 1.5,
+                    repeat: Infinity 
+                  }}
+                  className="mx-auto"
+                >
+                  <Phone className="mx-auto h-16 w-16 text-primary" />
+                </motion.div>
+                <h3 className="text-lg font-semibold">Connessione in corso...</h3>
+                <p>Stiamo connettendo la tua chiamata al sistema MOB.LOTTO</p>
+                
+                <div className="flex justify-center">
+                  <div className="flex space-x-2">
+                    {[0, 1, 2].map((i) => (
+                      <motion.div
+                        key={i}
+                        className="w-3 h-3 bg-primary rounded-full"
+                        animate={{
+                          opacity: [0.4, 1, 0.4],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          delay: i * 0.2
+                        }}
+                      />
+                    ))}
                   </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-green-600">HAI VINTO!</h3>
-                    <p className="text-3xl font-bold mt-2">
-                      €{result.amount?.toLocaleString('it-IT')}
-                    </p>
+                </div>
+              </motion.div>
+            )}
+            
+            {gameState === 'ivr' && (
+              <motion.div
+                key="ivr"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center space-y-6"
+              >
+                <motion.div
+                  animate={{ 
+                    scale: [1, 1.05, 1],
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity 
+                  }}
+                  className="mx-auto"
+                >
+                  <Phone className="mx-auto h-16 w-16 text-primary" />
+                </motion.div>
+                <h3 className="text-lg font-semibold">Messaggio IVR</h3>
+                <div className="bg-muted p-4 rounded-lg text-left">
+                  <p className="mb-2">
+                    <strong>Benvenuto a MOB.LOTTO 4.0</strong>
+                  </p>
+                  <p className="mb-2">
+                    Il costo di questa chiamata è di 1 euro.
+                  </p>
+                  <p>
+                    Per confermare di avere almeno 18 anni e partecipare, premi 3.
+                  </p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Simulazione del messaggio IVR...
+                </p>
+              </motion.div>
+            )}
+            
+            {gameState === 'playing' && (
+              <motion.div
+                key="playing"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center space-y-6"
+              >
+                <h3 className="text-lg font-semibold">Estrazione in corso</h3>
+                
+                <div className="relative flex justify-center">
+                  <motion.div
+                    animate={{ 
+                      rotate: 360,
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "linear"
+                    }}
+                    className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 flex items-center justify-center shadow-lg"
+                  >
+                    <Zap className="text-white h-12 w-12" />
+                  </motion.div>
+                </div>
+                
+                <div className="relative">
+                  <Progress value={progress} className="w-full h-4" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-xs font-medium text-primary-foreground">
+                      {progress}%
+                    </span>
                   </div>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-green-800">
-                      Complimenti! Sei un vincitore fortunato.
-                    </p>
-                    <p className="text-sm text-green-700 mt-2">
-                      Un operatore ti contatterà per le procedure di riscossione.
-                    </p>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Determinazione del risultato...
+                </p>
+              </motion.div>
+            )}
+            
+            {gameState === 'result' && result && (
+              <motion.div
+                key="result"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="text-center space-y-6"
+              >
+                {result.isWinner ? (
+                  <div className="space-y-6">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ 
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 20
+                      }}
+                      className="mx-auto relative"
+                    >
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-r from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg mx-auto">
+                        <Trophy className="text-white h-16 w-16" />
+                      </div>
+                      <motion.div
+                        className="absolute -top-2 -right-2 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center"
+                        animate={{
+                          scale: [1, 1.2, 1],
+                        }}
+                        transition={{
+                          duration: 0.5,
+                          repeat: Infinity
+                        }}
+                      >
+                        <span className="text-white text-sm font-bold">★</span>
+                      </motion.div>
+                    </motion.div>
+                    
+                    <div>
+                      <motion.h3 
+                        className="text-2xl font-bold text-green-600"
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        transition={{ 
+                          type: "spring",
+                          stiffness: 300,
+                          damping: 10
+                        }}
+                      >
+                        HAI VINTO!
+                      </motion.h3>
+                      <motion.p 
+                        className="text-3xl font-bold mt-2 text-green-600"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        €{result.amount?.toLocaleString('it-IT')}
+                      </motion.p>
+                    </div>
+                    
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="bg-green-50 p-4 rounded-lg border border-green-200"
+                    >
+                      <p className="text-green-800">
+                        Complimenti! Sei un vincitore fortunato.
+                      </p>
+                      <p className="text-sm text-green-700 mt-2">
+                        Un operatore ti contatterà per le procedure di riscossione.
+                      </p>
+                    </motion.div>
+                    
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.7 }}
+                      className="flex gap-3"
+                    >
+                      <Button className="flex-1" onClick={handlePlayAgain}>
+                        Gioca ancora
+                      </Button>
+                      <Button variant="outline" onClick={handleExit}>
+                        Esci
+                      </Button>
+                    </motion.div>
                   </div>
-                </>
-              ) : (
-                <>
-                  <div className="mx-auto bg-red-100 rounded-full p-3 w-16 h-16 flex items-center justify-center">
-                    <PhoneOff className="text-red-600 h-8 w-8" />
+                ) : (
+                  <div className="space-y-6">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ 
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 20
+                      }}
+                      className="mx-auto"
+                    >
+                      <div className="w-32 h-32 rounded-full bg-gradient-to-r from-gray-300 to-gray-500 flex items-center justify-center shadow-lg mx-auto">
+                        <PhoneOff className="text-white h-16 w-16" />
+                      </div>
+                    </motion.div>
+                    
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.3 }}
+                    >
+                      <h3 className="text-xl font-semibold text-red-600">RITENTA!</h3>
+                      <p className="mt-2">Non hai vinto questa volta. Riprova per tentare la fortuna!</p>
+                    </motion.div>
+                    
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="flex gap-3"
+                    >
+                      <Button className="flex-1" onClick={handlePlayAgain}>
+                        Gioca ancora
+                      </Button>
+                      <Button variant="outline" onClick={handleExit}>
+                        Esci
+                      </Button>
+                    </motion.div>
                   </div>
-                  <h3 className="text-xl font-semibold text-red-600">RITENTA!</h3>
-                  <p>Non hai vinto questa volta. Riprova per tentare la fortuna!</p>
-                </>
-              )}
-              
-              <div className="flex gap-3">
-                <Button className="flex-1" onClick={handlePlayAgain}>
-                  Gioca ancora
-                </Button>
-                <Button variant="outline" onClick={handleExit}>
-                  Esci
-                </Button>
-              </div>
-            </div>
-          )}
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     </div>
