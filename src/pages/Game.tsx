@@ -44,13 +44,13 @@ const Game = () => {
         setProgress((prev) => {
           if (prev >= 100) {
             clearInterval(timer);
-            // Determine result
-            const isWinner = Math.random() < 0.3; // 30% chance to win
+            // Determine result - Increased win probability to 50%
+            const isWinner = Math.random() < 0.5; // 50% chance to win (increased from 30%)
             let amount = 0;
             
             if (isWinner) {
-              // 10% chance for jackpot
-              const isJackpot = Math.random() < 0.1;
+              // 15% chance for jackpot (increased from 10%)
+              const isJackpot = Math.random() < 0.15;
               amount = isJackpot ? 100000 : Math.floor(Math.random() * 5000) + 5000;
             }
             
