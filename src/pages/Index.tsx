@@ -29,10 +29,10 @@ const Index = () => {
       title: "Chiamata in corso",
       description: "Stiamo connettendo la tua chiamata...",
     });
-    
-    // Navigate to game page after a short delay
+
+    // Navigate to regolamento page after a short delay
     setTimeout(() => {
-      navigate('/game');
+      navigate('/regolamento');
     }, 1500);
   };
 
@@ -73,7 +73,7 @@ const Index = () => {
                       Costo chiamata: €1
                     </p>
                   </div>
-                  
+
                   <div className="bg-muted p-4 rounded-lg">
                     <h3 className="font-semibold mb-2">Come giocare:</h3>
                     <ul className="text-sm space-y-1">
@@ -82,7 +82,7 @@ const Index = () => {
                       <li>• Vinci fino a €100.000!</li>
                     </ul>
                   </div>
-                  
+
                   <Button className="w-full" onClick={handlePlay}>
                     Simula chiamata
                   </Button>
@@ -94,7 +94,7 @@ const Index = () => {
           </div>
 
           <div className="space-y-6">
-            <GameStats 
+            <GameStats
               totalPlays={12450}
               totalWins={3750}
               jackpotWins={12}
