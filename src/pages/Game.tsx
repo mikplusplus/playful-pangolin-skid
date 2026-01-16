@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -6,6 +6,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Phone, PhoneOff, Trophy, Coins, Zap, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Howl } from 'howler';
+import {
+  playButtonClick,
+  playPhoneRing,
+  playWinSound,
+  playLoseSound,
+  playProgressSound,
+  playIvrSound,
+  stopSound
+} from '@/utils/sounds';
 
 const Game = () => {
   const [gameState, setGameState] = useState<'idle' | 'connecting' | 'ivr' | 'playing' | 'result'>('idle');
@@ -13,6 +23,16 @@ const Game = () => {
   const [result, setResult] = useState<{ isWinner: boolean; amount?: number } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const phoneRingSoundRef = useRef<Howl | null>(null);
+
+  // Clean up sounds on component unmount
+  useEffect(() => {
+    return () => {
+      if (phoneRingSoundRef.current) {
+        stopSound(phoneRingSoundRef.current);
+      }
+    };
+  }, []);
 
   // Simulate IVR flow
   useEffect(() => {
@@ -24,15 +44,26 @@ const Game = () => {
           description: "Benvenuto a MOB.LOTTO 4.0",
         });
       }, 2000);
-      
-      return () => clearTimeout(timer);
+
+      // Play phone ring sound
+      phoneRingSoundRef.current = playPhoneRing();
+
+      return () => {
+        clearTimeout(timer);
+        if (phoneRingSoundRef.current) {
+          stopSound(phoneRingSoundRef.current);
+        }
+      };
     }
-    
+
     if (gameState === 'ivr') {
       const timer = setTimeout(() => {
         setGameState('playing');
       }, 3000);
-      
+
+      // Play IVR sound
+      playIvrSound();
+
       return () => clearTimeout(timer);
     }
   }, [gameState, toast]);
@@ -47,13 +78,13 @@ const Game = () => {
             // Determine result - Increased win probability to 50%
             const isWinner = Math.random() < 0.5; // 50% chance to win (increased from 30%)
             let amount = 0;
-            
+
             if (isWinner) {
               // 15% chance for jackpot (increased from 10%)
               const isJackpot = Math.random() < 0.15;
               amount = isJackpot ? 100000 : Math.floor(Math.random() * 5000) + 5000;
             }
-            
+
             setResult({ isWinner, amount });
             setGameState('result');
             return 100;
@@ -61,24 +92,27 @@ const Game = () => {
           return prev + 10;
         });
       }, 300);
-      
+
       return () => clearInterval(timer);
     }
   }, [gameState]);
 
   const startGame = () => {
+    playButtonClick();
     setGameState('connecting');
     setProgress(0);
     setResult(null);
   };
 
   const handlePlayAgain = () => {
+    playButtonClick();
     setGameState('idle');
     setProgress(0);
     setResult(null);
   };
 
   const handleExit = () => {
+    playButtonClick();
     navigate('/');
   };
 
@@ -112,9 +146,9 @@ const Game = () => {
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <FloatingParticles />
-        
+
         {/* Pulsing background circles */}
-        <motion.div 
+        <motion.div
           className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-purple-500 opacity-20 blur-3xl"
           animate={{
             scale: [1, 1.2, 1],
@@ -126,7 +160,7 @@ const Game = () => {
             ease: "easeInOut"
           }}
         />
-        <motion.div 
+        <motion.div
           className="absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-pink-500 opacity-20 blur-3xl"
           animate={{
             scale: [1.2, 1, 1.2],
@@ -143,7 +177,7 @@ const Game = () => {
       <Card className="w-full max-w-lg relative z-10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg border-white/20 shadow-2xl">
         <CardHeader className="text-center relative">
           {/* Animated header decoration */}
-          <motion.div 
+          <motion.div
             className="absolute -top-8 left-1/2 transform -translate-x-1/2"
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
@@ -153,7 +187,7 @@ const Game = () => {
               <Phone className="text-white h-8 w-8" />
             </div>
           </motion.div>
-          
+
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -167,7 +201,7 @@ const Game = () => {
             </CardDescription>
           </motion.div>
         </CardHeader>
-        
+
         <CardContent className="relative">
           <AnimatePresence mode="wait">
             {gameState === 'idle' && (
@@ -180,7 +214,7 @@ const Game = () => {
                 className="space-y-6"
               >
                 <div className="text-center">
-                  <motion.div 
+                  <motion.div
                     className="flex justify-center mb-6 relative"
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -201,7 +235,7 @@ const Game = () => {
                       >
                         <Coins className="text-white h-16 w-16" />
                       </motion.div>
-                      
+
                       {/* Floating price tag */}
                       <motion.div
                         className="absolute -top-4 -right-4 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center shadow-lg"
@@ -215,7 +249,7 @@ const Game = () => {
                       >
                         <span className="text-white text-sm font-bold">€1</span>
                       </motion.div>
-                      
+
                       {/* Sparkling effects */}
                       {[...Array(5)].map((_, i) => (
                         <motion.div
@@ -240,8 +274,8 @@ const Game = () => {
                       ))}
                     </div>
                   </motion.div>
-                  
-                  <motion.p 
+
+                  <motion.p
                     className="mb-6 text-white/90"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -249,7 +283,7 @@ const Game = () => {
                   >
                     Benvenuto nel sistema MOB.LOTTO 4.0. Premi il pulsante per simulare una chiamata.
                   </motion.p>
-                  
+
                   <motion.div
                     className="bg-white/10 backdrop-blur-sm p-4 rounded-xl mb-6 border border-white/20"
                     initial={{ opacity: 0, y: 20 }}
@@ -268,14 +302,14 @@ const Game = () => {
                     </ol>
                   </motion.div>
                 </div>
-                
+
                 <motion.div
                   className="flex gap-3"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.9 }}
                 >
-                  <Button 
+                  <Button
                     className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
                     onClick={startGame}
                     whileHover={{ scale: 1.03 }}
@@ -283,8 +317,8 @@ const Game = () => {
                   >
                     Inizia a giocare
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     onClick={handleExit}
                     className="border-white/30 text-white hover:bg-white/10"
                     whileHover={{ scale: 1.03 }}
@@ -295,7 +329,7 @@ const Game = () => {
                 </motion.div>
               </motion.div>
             )}
-            
+
             {gameState === 'connecting' && (
               <motion.div
                 key="connecting"
@@ -305,22 +339,22 @@ const Game = () => {
                 className="text-center space-y-6 py-8"
               >
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.1, 1],
                     rotate: [0, 10, -10, 0]
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 1.5,
-                    repeat: Infinity 
+                    repeat: Infinity
                   }}
                   className="mx-auto relative"
                 >
                   <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-400 to-cyan-500 flex items-center justify-center shadow-xl">
                     <Phone className="text-white h-12 w-12" />
                   </div>
-                  
+
                   {/* Pulsing ring effect */}
-                  <motion.div 
+                  <motion.div
                     className="absolute inset-0 rounded-full border-4 border-cyan-400"
                     animate={{
                       scale: [1, 1.5, 2],
@@ -332,16 +366,16 @@ const Game = () => {
                     }}
                   />
                 </motion.div>
-                
-                <motion.h3 
+
+                <motion.h3
                   className="text-2xl font-bold text-white"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
                   Connessione in corso...
                 </motion.h3>
-                
-                <motion.p 
+
+                <motion.p
                   className="text-white/80"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -349,7 +383,7 @@ const Game = () => {
                 >
                   Stiamo connettendo la tua chiamata al sistema MOB.LOTTO
                 </motion.p>
-                
+
                 <div className="flex justify-center">
                   <div className="flex space-x-2">
                     {[0, 1, 2].map((i) => (
@@ -369,7 +403,7 @@ const Game = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 {/* Animated connection lines */}
                 <div className="relative h-16">
                   {[...Array(5)].map((_, i) => (
@@ -392,7 +426,7 @@ const Game = () => {
                 </div>
               </motion.div>
             )}
-            
+
             {gameState === 'ivr' && (
               <motion.div
                 key="ivr"
@@ -402,21 +436,21 @@ const Game = () => {
                 className="text-center space-y-6 py-4"
               >
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.05, 1],
                   }}
-                  transition={{ 
+                  transition={{
                     duration: 2,
-                    repeat: Infinity 
+                    repeat: Infinity
                   }}
                   className="mx-auto relative"
                 >
                   <div className="w-24 h-24 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center shadow-xl">
                     <Phone className="text-white h-12 w-12" />
                   </div>
-                  
+
                   {/* Floating sound waves */}
-                  <motion.div 
+                  <motion.div
                     className="absolute -inset-4 rounded-full border-2 border-purple-400"
                     animate={{
                       scale: [1, 1.3, 1.6],
@@ -428,15 +462,15 @@ const Game = () => {
                     }}
                   />
                 </motion.div>
-                
-                <motion.h3 
+
+                <motion.h3
                   className="text-2xl font-bold text-white"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
                   Messaggio IVR
                 </motion.h3>
-                
+
                 <motion.div
                   className="bg-white/10 backdrop-blur-sm p-5 rounded-xl text-left border border-white/20"
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -444,7 +478,7 @@ const Game = () => {
                   transition={{ delay: 0.3 }}
                 >
                   <motion.p className="mb-3 text-white">
-                    <motion.strong 
+                    <motion.strong
                       className="text-yellow-300"
                       animate={{ opacity: [0.7, 1, 0.7] }}
                       transition={{ duration: 2, repeat: Infinity }}
@@ -459,8 +493,8 @@ const Game = () => {
                     Per confermare di avere almeno 18 anni e partecipare, premi <span className="text-yellow-300 font-bold">3</span>.
                   </motion.p>
                 </motion.div>
-                
-                <motion.p 
+
+                <motion.p
                   className="text-white/70"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -468,7 +502,7 @@ const Game = () => {
                 >
                   Simulazione del messaggio IVR...
                 </motion.p>
-                
+
                 {/* Animated voice waves */}
                 <div className="flex justify-center space-x-1">
                   {[...Array(8)].map((_, i) => (
@@ -489,7 +523,7 @@ const Game = () => {
                 </div>
               </motion.div>
             )}
-            
+
             {gameState === 'playing' && (
               <motion.div
                 key="playing"
@@ -498,20 +532,20 @@ const Game = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="text-center space-y-6 py-4"
               >
-                <motion.h3 
+                <motion.h3
                   className="text-2xl font-bold text-white"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
                   Estrazione in corso
                 </motion.h3>
-                
+
                 <div className="relative flex justify-center">
                   <motion.div
-                    animate={{ 
+                    animate={{
                       rotate: 360,
                     }}
-                    transition={{ 
+                    transition={{
                       duration: 2,
                       repeat: Infinity,
                       ease: "linear"
@@ -519,15 +553,14 @@ const Game = () => {
                     className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-2xl relative overflow-hidden"
                   >
                     <Zap className="text-white h-16 w-16" />
-                    
                     {/* Inner rotating ring */}
-                    <motion.div 
+                    <motion.div
                       className="absolute inset-0 rounded-full border-4 border-white/30"
                       animate={{ rotate: -360 }}
                       transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
                     />
                   </motion.div>
-                  
+
                   {/* Orbiting particles */}
                   {[...Array(8)].map((_, i) => (
                     <motion.div
@@ -548,11 +581,11 @@ const Game = () => {
                     />
                   ))}
                 </div>
-                
+
                 <div className="relative">
                   <Progress value={progress} className="w-full h-4 bg-white/20" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <motion.span 
+                    <motion.span
                       className="text-sm font-bold text-white"
                       animate={{ opacity: [0.7, 1, 0.7] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
@@ -561,8 +594,8 @@ const Game = () => {
                     </motion.span>
                   </div>
                 </div>
-                
-                <motion.p 
+
+                <motion.p
                   className="text-white/80"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -570,7 +603,7 @@ const Game = () => {
                 >
                   Determinazione del risultato...
                 </motion.p>
-                
+
                 {/* Animated sparkles */}
                 {[...Array(10)].map((_, i) => (
                   <motion.div
@@ -595,7 +628,7 @@ const Game = () => {
                 ))}
               </motion.div>
             )}
-            
+
             {gameState === 'result' && result && (
               <motion.div
                 key="result"
@@ -609,7 +642,7 @@ const Game = () => {
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ 
+                      transition={{
                         type: "spring",
                         stiffness: 260,
                         damping: 20
@@ -618,9 +651,8 @@ const Game = () => {
                     >
                       <div className="w-40 h-40 rounded-full bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl mx-auto relative overflow-hidden">
                         <Trophy className="text-white h-20 w-20" />
-                        
                         {/* Glowing effect */}
-                        <motion.div 
+                        <motion.div
                           className="absolute inset-0 rounded-full bg-yellow-400 opacity-30"
                           animate={{
                             scale: [1, 1.5, 1],
@@ -632,7 +664,7 @@ const Game = () => {
                           }}
                         />
                       </div>
-                      
+
                       {/* Animated confetti */}
                       {[...Array(20)].map((_, i) => (
                         <motion.div
@@ -656,7 +688,7 @@ const Game = () => {
                           }}
                         />
                       ))}
-                      
+
                       {/* Animated star */}
                       <motion.div
                         className="absolute -top-4 -right-4 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center shadow-lg"
@@ -672,13 +704,13 @@ const Game = () => {
                         <Star className="text-white h-6 w-6" fill="currentColor" />
                       </motion.div>
                     </motion.div>
-                    
+
                     <div>
-                      <motion.h3 
+                      <motion.h3
                         className="text-4xl font-bold bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 bg-clip-text text-transparent"
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        transition={{ 
+                        transition={{
                           type: "spring",
                           stiffness: 300,
                           damping: 10
@@ -686,8 +718,8 @@ const Game = () => {
                       >
                         HAI VINTO!
                       </motion.h3>
-                      
-                      <motion.p 
+
+                      <motion.p
                         className="text-4xl font-bold mt-4 bg-gradient-to-r from-yellow-200 via-yellow-300 to-yellow-400 bg-clip-text text-transparent"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -696,7 +728,7 @@ const Game = () => {
                         €{result.amount?.toLocaleString('it-IT')}
                       </motion.p>
                     </div>
-                    
+
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -710,14 +742,14 @@ const Game = () => {
                         Un operatore ti contatterà per le procedure di riscossione.
                       </motion.p>
                     </motion.div>
-                    
+
                     <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.7 }}
                       className="flex gap-3"
                     >
-                      <Button 
+                      <Button
                         className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg"
                         onClick={handlePlayAgain}
                         whileHover={{ scale: 1.03 }}
@@ -725,8 +757,8 @@ const Game = () => {
                       >
                         Gioca ancora
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={handleExit}
                         className="border-white/30 text-white hover:bg-white/10"
                         whileHover={{ scale: 1.03 }}
@@ -741,7 +773,7 @@ const Game = () => {
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ 
+                      transition={{
                         type: "spring",
                         stiffness: 260,
                         damping: 20
@@ -751,9 +783,8 @@ const Game = () => {
                       <div className="w-32 h-32 rounded-full bg-gradient-to-r from-gray-500 to-gray-700 flex items-center justify-center shadow-xl mx-auto">
                         <PhoneOff className="text-white h-16 w-16" />
                       </div>
-                      
                       {/* Subtle pulse effect */}
-                      <motion.div 
+                      <motion.div
                         className="absolute inset-0 rounded-full bg-gray-500 opacity-20"
                         animate={{
                           scale: [1, 1.3, 1],
@@ -765,7 +796,7 @@ const Game = () => {
                         }}
                       />
                     </motion.div>
-                    
+
                     <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
@@ -774,14 +805,14 @@ const Game = () => {
                       <h3 className="text-3xl font-bold text-red-400">RITENTA!</h3>
                       <p className="mt-3 text-white/90">Non hai vinto questa volta. Riprova per tentare la fortuna!</p>
                     </motion.div>
-                    
+
                     <motion.div
                       initial={{ y: 20, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ delay: 0.5 }}
                       className="flex gap-3"
                     >
-                      <Button 
+                      <Button
                         className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg"
                         onClick={handlePlayAgain}
                         whileHover={{ scale: 1.03 }}
@@ -789,8 +820,8 @@ const Game = () => {
                       >
                         Gioca ancora
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={handleExit}
                         className="border-white/30 text-white hover:bg-white/10"
                         whileHover={{ scale: 1.03 }}

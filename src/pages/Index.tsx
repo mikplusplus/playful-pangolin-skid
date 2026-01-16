@@ -8,6 +8,7 @@ import { Phone, Trophy, Shield, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import GameStats from '@/components/GameStats';
 import IVRFlow from '@/components/IVRFlow';
+import { playButtonClick } from '@/utils/sounds';
 
 const Index = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -15,6 +16,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handlePlay = () => {
+    playButtonClick();
     if (!phoneNumber) {
       toast({
         title: "Numero richiesto",

@@ -2,15 +2,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Shield, BookOpen, Users, Trophy, Phone, Zap, Star } from 'lucide-react';
+import { playButtonClick } from '@/utils/sounds';
 
 const Regolamento = () => {
   const navigate = useNavigate();
 
   const handleAccept = () => {
+    playButtonClick();
     navigate('/game');
   };
 
   const handleDecline = () => {
+    playButtonClick();
     navigate('/');
   };
 
