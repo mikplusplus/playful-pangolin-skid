@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, PhoneOff, Trophy, Coins, Zap, Star } from 'lucide-react';
+import { Phone, PhoneOff, Trophy, Coins, Zap, Star, Volume2, VolumeX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Howl } from 'howler';
@@ -21,9 +21,34 @@ const Game = () => {
   const [gameState, setGameState] = useState<'idle' | 'connecting' | 'ivr' | 'playing' | 'result'>('idle');
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<{ isWinner: boolean; amount?: number } | null>(null);
+  const [isAudioSupported, setIsAudioSupported] = useState<boolean | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const phoneRingSoundRef = useRef<Howl | null>(null);
+
+  // Controllo supporto audio
+  useEffect(() => {
+    try {
+      const audio = new Audio();
+      const supported = !!audio.canPlayType('audio/mpeg') || !!audio.canPlayType('audio/wav');
+      setIsAudioSupported(supported);
+
+      if (!supported) {
+        toast({
+          title: "Audio non supportato",
+          description: "Il tuo browser non supporta la riproduzione audio",
+          variant: "destructive",
+        });
+      }
+    } catch (e) {
+      setIsAudioSupported(false);
+      toast({
+        title: "Errore audio",
+        description: "Impossibile verificare il supporto audio",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   // Clean up sounds on component unmount
   useEffect(() => {
@@ -203,6 +228,23 @@ const Game = () => {
         </CardHeader>
 
         <CardContent className="relative">
+          {/* Audio status indicator */}
+          {isAudioSupported !== null && (
+            <div className="absolute top-4 right-4 z-20">
+              {isAudioSupported ? (
+                <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 px-2 py-1 rounded-full">
+                  <Volume2 className="h-3 w-3" />
+                  Audio attivo
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-red-400 bg-red-500/10 px-2 py-1 rounded-full">
+                  <VolumeX className="h-3 w-3" />
+                  Audio disattivo
+                </div>
+              )}
+            </div>
+          )}
+
           <AnimatePresence mode="wait">
             {gameState === 'idle' && (
               <motion.div
